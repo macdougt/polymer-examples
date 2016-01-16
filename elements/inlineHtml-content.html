@@ -1,0 +1,19 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<dom-module id="inlineHtml-content">
+  <script>
+    Polymer({
+      is: "inlineHtml-content",
+      properties: {
+        mycontent: { 
+          type: String,
+          value: 'testing And here <b>testing</b><img src="http://placehold.it/350x150">',
+          observer: 'myContentChanged'
+        } 
+      },
+      myContentChanged: function() {        
+        this.innerHTML = this.mycontent;
+      }
+    });
+  </script>
+</polymer-element>
+

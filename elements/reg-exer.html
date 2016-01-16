@@ -1,0 +1,161 @@
+<!-- <link rel="import" href="../bower_components/polymer/polymer.html"> -->
+<link rel="import" href="https://cdn.rawgit.com/download/polymer-cdn/1.2.3.2/lib/polymer/polymer.html">
+<link rel="import" href="inlineHtml-content.html">
+
+<dom-module id="reg-exer">
+  <!-- outermost template defines the element's shadow DOM -->
+  <template>
+        <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Raleway:400,300,600" type="text/css">
+ 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+
+
+      <input class="u-full-width" type="text" value="{{regex::input}}" placeholder="Enter regex here (e.g. (\w+) (\w+) (\w+) (\w+))" id="regex">
+      <input class="u-full-width" type="text" value="{{regexAfter::input}}" placeholder="Enter transform here (e.g. $4 -- I like this a lot -- $3)" id="regexAfter">
+		  <div class="row">
+				<div class="one-half column"><textarea style="min-height:200px" class="u-full-width" value="{{filterTargetContent::input}}" placeholder="Enter the content to be matched" id="ta1"></textarea></div>
+				<div class="one-half column"><inlineHtml-content mycontent="{{filterTargetContentHtml}}"></inlineHtml-content></div>
+  		</div>
+		  <textarea class="u-full-width" value="{{matchedContent}}" id="ta2"></textarea>
+		  <textarea class="u-full-width" style="min-height:200px" value="{{transformedContent}}" id="ta3"></textarea>
+  </template>
+  <script>
+  var colours = ["lightblue", "yellow","orange","lightgreen","wheat","pink"];
+    Polymer({
+		is: 'reg-exer',
+		properties: {
+			regex: { 
+				type: String,
+				observer: 'regexChanged' 
+			},
+			regexAfter: { 
+				type: String,
+				observer: 'regexAfterChanged' 
+			},
+			filterTargetContent: { 
+				type: String,
+				observer: 'filterTargetContentChanged' 
+			},
+			filterTargetContentHtml: { 
+				type: String,
+				value: '[Matches will appear here]',
+				observer: 'filterTargetContentHtmlChanged' 
+			},
+			matchedContent: { type: String },
+			transformedContent: { type: String }
+		}, 
+		ready: function() {
+		},
+
+		regexChanged: function(newValue, oldValue) {
+				console.log('Here: '+ oldValue+" "+newValue);
+				this.reApplyRegex();
+				this.reApplyRegexTransform();
+		},
+
+		regexAfterChanged: function(newValue, oldValue) {
+				// console.log('After: '+ oldValue+" "+newValue);
+				// Translate the regex after to their instructions
+				this.reApplyRegexTransform();
+		},
+
+
+		filterTargetContentChanged: function(newValue, oldValue) {
+			// If the content changes, apply the regex to the new content
+				// console.log('Content: '+ oldValue+" "+newValue);
+				this.reApplyRegex();
+				this.reApplyRegexTransform();
+		},
+
+		filterTargetContentHtmlChanged: function(newValue, oldValue) {
+			// If the content changes, apply the regex to the new content
+				console.log('HTML Content: '+ oldValue+" "+newValue);
+		},
+
+		reApplyRegex: function() {
+		// Apply the regex to the content
+			try {
+				if (this.filterTargetContent && this.regex) {
+
+					  var lines = this.filterTargetContent.split('\n');
+						var retVal = '';
+						var retVal2 = '';
+
+						// Iterate over the lines
+						for (var j = 0; j < lines.length; j++) {
+
+								var curRegex = RegExp(this.regex);
+
+								// Add highlighting of content
+								var currentLine = lines[j];
+								var matches = curRegex.exec(currentLine);
+								if (matches) {
+										var beginning;
+										var remainder = currentLine;
+										var lastIndex = 0;
+
+										// Iterate over the matches
+										for (var i = 1; i < matches.length; i++) {
+											retVal += i + ' ' + matches[i] + '\n';
+											
+											var startIndex = remainder.indexOf(matches[i]);
+											var endIndex = startIndex + matches[i].length;
+											beginning = currentLine.substring(0,startIndex+lastIndex);
+											remainder = currentLine.substring(endIndex+lastIndex);
+											var replacement = '<span style="background-color:'+colours[i-1]+'">'+matches[i]+'</span>\n';
+											currentLine = beginning + replacement + remainder;
+											lastIndex = beginning.length + replacement.length;
+
+										};
+
+										// Need html encode the matched text
+										//retVal2 += lines[j].replace(curRegex,'<span style="background-color:'+colours[0]+'">$&</span>') + '\n';
+
+										// Add separator
+										retVal += '\n';
+										retVal2 += currentLine + '<br />';
+								}
+						}
+
+						this.matchedContent = retVal;
+						this.filterTargetContentHtml = retVal2;
+
+				}
+			} catch(err) {
+				console.log('error');
+				console.log(err);
+			}
+		},
+
+		reApplyRegexTransform: function() {
+				// Apply the regex to the content
+				try {
+						if (this.filterTargetContent && this.regex && this.regexAfter) {
+
+								var curRegex = RegExp(this.regex);
+
+								// Iterate through the content and apply the tranform
+								// Caching will make this faster
+								var lines = this.filterTargetContent.split('\n');
+								var retVal = '';
+
+								// Iterate over the lines
+								for (var j = 0; j < lines.length; j++) {
+										var curRegex = RegExp(this.regex);
+										// Replace the matched part of the string
+										var matches = curRegex.exec(lines[j]);
+										if (matches) {
+											retVal += matches[0].replace(curRegex,this.regexAfter) + '\n';
+										}
+								}
+
+								this.transformedContent = retVal;
+						}
+				} catch(err) {
+					console.log('error');
+					console.log(err);
+				}
+		}
+
+    });
+  </script>
+</dom-module>
